@@ -481,14 +481,32 @@ install_kiro() {
     local DESKTOP_FILE_CONTENT="[Desktop Entry]
 Name=Kiro
 Comment=$APP_COMMENT
+GenericName=Text Editor
 Exec=$INSTALL_DIR/bin/kiro %F
 Icon=$ICON_PATH
-Terminal=false
 Type=Application
-Categories=Development;IDE;
-MimeType=text/plain;inode/directory;
+StartupNotify=false
 StartupWMClass=kiro
-StartupNotify=true
+Categories=TextEditor;Development;IDE;
+MimeType=text/plain;inode/directory;
+Actions=new-empty-window;
+Keywords=vscode;
+Terminal=false
+
+[Desktop Action new-empty-window]
+Name=New Empty Window
+Name[cs]=Nové prázdné okno
+Name[de]=Neues leeres Fenster
+Name[es]=Nueva ventana vacía
+Name[fr]=Nouvelle fenêtre vide
+Name[it]=Nuova finestra vuota
+Name[ja]=新しい空のウィンドウ
+Name[ko]=새 빈 창
+Name[ru]=Новое пустое окно
+Name[zh_CN]=新建空窗口
+Name[zh_TW]=開新空視窗
+Exec=$INSTALL_DIR/bin/kiro --new-window %F
+Icon=$ICON_PATH
 "
 
     # Write desktop file
@@ -498,6 +516,28 @@ StartupNotify=true
     else
         echo "$DESKTOP_FILE_CONTENT" > "$DESKTOP_DIR/kiro.desktop"
         chmod +x "$DESKTOP_DIR/kiro.desktop"
+    fi
+
+    # Create URL handler desktop file content
+    local URL_HANDLER_CONTENT="[Desktop Entry]
+Name=Kiro - URL Handler
+Comment=Kiro Authentication Handler
+GenericName=Text Editor
+Exec=$INSTALL_DIR/bin/kiro --open-url %U
+Icon=$ICON_PATH
+Type=Application
+NoDisplay=true
+StartupNotify=true
+MimeType=x-scheme-handler/kiro;
+"
+
+    # Write URL handler desktop file
+    if [ "$NEED_SUDO" = true ]; then
+        echo "$URL_HANDLER_CONTENT" | sudo tee "$DESKTOP_DIR/kiro-url-handler.desktop" > /dev/null
+        sudo chmod +x "$DESKTOP_DIR/kiro-url-handler.desktop"
+    else
+        echo "$URL_HANDLER_CONTENT" > "$DESKTOP_DIR/kiro-url-handler.desktop"
+        chmod +x "$DESKTOP_DIR/kiro-url-handler.desktop"
     fi
     
     # Update desktop database if command exists
@@ -586,14 +626,23 @@ uninstall_kiro() {
         else
             rm "$DESKTOP_DIR/kiro.desktop"
         fi
+    fi
+
+    # Remove URL handler desktop file
+    if [ -f "$DESKTOP_DIR/kiro-url-handler.desktop" ]; then
+        if [ "$NEED_SUDO" = true ]; then
+            sudo rm "$DESKTOP_DIR/kiro-url-handler.desktop"
+        else
+            rm "$DESKTOP_DIR/kiro-url-handler.desktop"
+        fi
+    fi
         
-        # Update desktop database if command exists
-        if command -v update-desktop-database &> /dev/null; then
-            if [ "$NEED_SUDO" = true ]; then
-                sudo update-desktop-database "$DESKTOP_DIR"
-            else
-                update-desktop-database "$DESKTOP_DIR"
-            fi
+    # Update desktop database if command exists
+    if command -v update-desktop-database &> /dev/null; then
+        if [ "$NEED_SUDO" = true ]; then
+            sudo update-desktop-database "$DESKTOP_DIR"
+        else
+            update-desktop-database "$DESKTOP_DIR"
         fi
     fi
 
